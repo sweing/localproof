@@ -34,11 +34,11 @@ localproof/
 │   ├── app/                   # Flask application
 │   ├── static/                # Static files (CSS, JS, images)
 │   ├── templates/             # HTML templates
-│   ├── requirements.txt       # Python dependencies
 │   └── README.md              # Website-specific documentation
 ├── pictures                   # Photos for BLOGPOST.md
 ├── README.md                  # Main project README
 ├── BLOGPOST.md                # Blog post
+├── requirements.txt           # Python dependencies
 └── LICENSE                    # Project license (e.g., MIT)
 ```
 

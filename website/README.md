@@ -21,6 +21,7 @@ This directory contains the Flask backend and frontend for the LOCALPROOF web ap
 
 2. Run the Flask app:
    ```bash
+   cd website
    python app.py
    ```
 
