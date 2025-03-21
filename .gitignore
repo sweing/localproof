@@ -1,0 +1,31 @@
+# Ignore environment variables and secrets
+.env
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment
+venv/
+
+# Ignore IDE/editor-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore log files and temporary files
+*.log
+*.tmp
+
+# Ignore databases
+*.db
+
+# Ignore generated QR codes
+/esp32/static/*
+!/esp32/static/.gitkeep
+
+# Ignore adding devices with secrets
+/website/add_devices.py

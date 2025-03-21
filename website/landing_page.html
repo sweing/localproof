@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOCALPROOF</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .globe-container {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .globe-container:hover {
+            transform: scale(1.05);
+        }
+
+        .globe {
+            width: 300px;
+            height: 300px;
+        }
+
+        .enter-text {
+            font-size: 0.5rem;
+            fill: #fff;
+            transition: fill 0.3s ease;
+        }
+
+        .globe-container:hover .enter-text {
+            fill: #00ff00;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+            100% { opacity: 0.8; }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>LOCALPROOF.ORG</h1>
+    
+    <a href="https://map.localproof.org" class="globe-container">
+        <svg class="globe" viewBox="0 0 100 100">
+            <!-- Globe -->
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#333" stroke-width="2"/>
+            
+            <!-- Enter Map Text -->
+            <text class="enter-text" x="50" y="50" 
+                  text-anchor="middle" dominant-baseline="middle"
+                  font-family="Arial, sans-serif" font-weight="bold">
+                ENTER MAP
+            </text>
+            
+            <!-- Animated Pulse Effect -->
+            <circle class="pulse" cx="50" cy="50" r="45" fill="none" stroke="#666" stroke-width="1"/>
+        </svg>
+    </a>
+
+</body>
+</html>

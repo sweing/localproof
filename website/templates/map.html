@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LOCALPROOF: MAP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        } */
+        html {
+            height: 100%;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            padding: 0px;
+            margin: 0px;
+            /* align-items: center;
+            justify-content: center; */
+            min-height: 100%;
+            height: 100%;
+        }
+        #map {
+            height: 100vh;
+            width: 100vw;
+            background: #000;
+        }
+        .leaflet-popup-content {
+            font-size: 16px;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 0;
+        }
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        .popup-headline {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .popup-content {
+            max-height: 300px; /* Adjust as needed */
+            overflow-y: hidden; /* Enable vertical scrolling */
+        }
+        #status-message {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 1000;
+            font-size: 16px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .emoji-marker {
+            font-size: 24px;
+            text-align: center;
+            line-height: 1;
+        }
+        .validation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .validation-table th,
+        .validation-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .validation-table th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0; /* Make table headers sticky */
+            z-index: 1; /* Ensure headers stay above the table body */
+        }
+    </style>
+</head>
+<body>
+    {% if status %}
+    <div id="status-message">{{ status }}</div>
+    {% endif %}
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map', {
+            maxZoom: 18,
+            zoomControl: true,
+            maxNativeZoom: 20
+        });
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            //attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '© <a href="https://carto.com/attributions">CARTO</a>'
+        }).addTo(map);
+
+        // Round lat/lng to 4 decimal places
+        function roundToFourDecimals(num) {
+            return Math.round(num * 10000) / 10000;
+        }
+
+        // Function to fetch validation logs for a device
+        async function fetchValidationLogs(device_id) {
+            try {
+                const response = await fetch(`/validation-logs/${device_id}`);
+                if (!response.ok) throw new Error('Failed to fetch validation logs');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching validation logs:', error);
+                return [];
+            }
+        }
+
+        // Function to render validation logs in a table
+        function renderValidationLogs(logs) {
+            if (logs.length === 0) return '<p>No validation attempts found.</p>';
+
+            let table = `
+                <table class="validation-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            logs.forEach(log => {
+                table += `
+                    <tr>
+                        <td>${log.timestamp}</td>
+                        <td>${log.status}</td>
+                    </tr>
+                `;
+            });
+
+            table += `
+                    </tbody>
+                </table>
+            `;
+            return table;
+        }
+
+        // Create markers for all devices
+        var markers = [];
+        {% for device in devices %}
+            (function(device) {
+                var deviceMarker = L.marker([{{ device.lat }}, {{ device.lng }}]).addTo(map);
+                
+                // Fetch and display validation logs when the popup opens
+                deviceMarker.on('popupopen', async function() {
+                    const logs = await fetchValidationLogs(device.device_id);
+                    const popupContent = `
+                        <div class="popup-headline">Device Location</div>
+                        <div class="popup-content">
+                            Device: ${device.device_id}<br>
+                            Location: ${roundToFourDecimals({{ device.lat }})}, ${roundToFourDecimals({{ device.lng }})}<br>
+                            Max. Validations per Cycle: {{ device.max_validations }}
+                            <hr>
+                            <strong>Validation Attempts:</strong>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                ${renderValidationLogs(logs)}
+                            </div>
+                        </div>
+                    `;
+                    deviceMarker.setPopupContent(popupContent);
+                });
+
+                deviceMarker.bindPopup('Loading validation logs...');
+                markers.push(deviceMarker);
+            })({
+                device_id: '{{ device.device_id }}',
+                lat: {{ device.lat }},
+                lng: {{ device.lng }},
+                max_validations: {{ device.max_validations }}
+            });
+        {% endfor %}
+
+        // Check if validation data is available
+        {% if esp_lat and esp_lng %}
+            // Add ESP32 GPS location marker
+            var espMarker = L.marker([{{ esp_lat }}, {{ esp_lng }}], {
+                icon: L.divIcon({
+                    className: 'emoji-marker',
+                    html: '🛰️',
+                    iconSize: [32, 32]
+                })
+            }).addTo(map)
+                .bindPopup(`
+                    <div class="popup-headline">Device Location (from ESP32 GPS)</div>
+                    <div class="popup-content">
+                        Location: ${roundToFourDecimals({{ esp_lat }})}, ${roundToFourDecimals({{ esp_lng }})}
+                    </div>
+                `);
+            markers.push(espMarker);
+
+            // Add database device location marker
+            var deviceMarker = L.marker([{{ device_lat }}, {{ device_lng }}]).addTo(map)
+                .bindPopup(`
+                    <div class="popup-headline">Device Location (from DB)</div>
+                    <div class="popup-content">
+                        Device: {{ device_id }}<br>
+                        Location: ${roundToFourDecimals({{ device_lat }})}, ${roundToFourDecimals({{ device_lng }})}<br>
+                        Max. Validations per Cycle: {{ devices[0].max_validations }}
+                    </div>
+                `);
+            markers.push(deviceMarker);
+
+            // Fit bounds to ESP32 and database device locations
+            var initialGroup = L.featureGroup([espMarker, deviceMarker]);
+            map.fitBounds(initialGroup.getBounds());
+
+            // Ask for browser location permission (user position)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var userLat = position.coords.latitude;
+                    var userLng = position.coords.longitude;
+
+                    // Add user location marker
+                    var userMarker = L.marker([userLat, userLng], {
+                        icon: L.divIcon({
+                            className: 'emoji-marker',
+                            html: '📱',
+                            iconSize: [32, 32]
+                        })
+                    }).addTo(map)
+                        .bindPopup(`
+                            <div class="popup-headline">Your Location (from Browser)</div>
+                            <div class="popup-content">
+                                Location: ${roundToFourDecimals(userLat)}, ${roundToFourDecimals(userLng)}
+                            </div>
+                        `);
+                    markers.push(userMarker);
+
+                    // Fit bounds to all 3 locations (ESP32, database device, and browser)
+                    var finalGroup = L.featureGroup([espMarker, deviceMarker, userMarker]);
+                    map.fitBounds(finalGroup.getBounds());
+                }, function(error) {
+                    console.error("Error getting location: ", error);
+                });
+            } else {
+                console.error("Geolocation is not supported by this browser.");
+            }
+        {% else %}
+            // Fit bounds to all device locations if no validation is performed
+            var allDevicesGroup = L.featureGroup(markers);
+            map.fitBounds(allDevicesGroup.getBounds());
+        {% endif %}
+
+        // Hide the status message after 10 seconds (if it exists)
+        var statusMessage = document.getElementById('status-message');
+        if (statusMessage) {
+            setTimeout(function() {
+                statusMessage.style.display = 'none';
+            }, 10000);
+        }
+    </script>
+</body>
+</html>
