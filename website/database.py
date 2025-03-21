@@ -25,8 +25,18 @@ CREATE TABLE IF NOT EXISTS validation_logs (
     reason TEXT,
     lat REAL,
     lng REAL,
-    ip TEXT
+    ip TEXT,
+    username TEXT
 )
+''')
+
+# Create a table for users
+cursor.execute('''
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+);
 ''')
 
 # Commit changes and close the connection

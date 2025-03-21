@@ -86,6 +86,56 @@
             top: 0; /* Make table headers sticky */
             z-index: 1; /* Ensure headers stay above the table body */
         }
+        #login-form {
+            display: none; /* Hide by default */
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        #login-form input {
+            display: block;
+            margin-bottom: 5px;
+            padding: 5px;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            width: 150px;
+        }
+        #login-form button {
+            padding: 3px 7px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+        }
+        #user-info {
+            display: none; /* Hide by default */
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        #user-info button {
+            padding: 3px 7px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+        }
     </style>
 </head>
 <body>
@@ -93,6 +143,16 @@
     <div id="status-message">{{ status }}</div>
     {% endif %}
     <div id="map"></div>
+    <div id="login-form">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <button onclick="register()">Register</button>
+    </div>
+    <div id="user-info" style="display: none;">
+        Logged in as: <span id="logged-in-username"></span>
+        <button onclick="logout()">Logout</button>
+    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Initialize the map
@@ -125,26 +185,98 @@
             }
         }
 
+        // Function to handle login
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (!username || !password) {
+                alert('Username and password are required');
+                return;
+            }
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('user-info').style.display = 'block';
+                document.getElementById('logged-in-username').textContent = data.username;
+            } else {
+                alert(data.error || 'Login failed');
+            }
+        }
+
+        // Function to handle registration
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (!username || !password) {
+                alert('Username and password are required');
+                return;
+            }
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('Registration successful. Please log in.');
+            } else {
+                alert(data.error || 'Registration failed');
+            }
+        }
+
+        // Function to handle logout
+        async function logout() {
+            const response = await fetch('/logout');
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('user-info').style.display = 'none';
+            }
+        }
+
+        // Check login status on page load
+        async function checkLogin() {
+            const response = await fetch('/check-login');
+            const data = await response.json();
+            if (data.logged_in) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('user-info').style.display = 'block';
+                document.getElementById('logged-in-username').textContent = data.username;
+            } else {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('user-info').style.display = 'none';
+            }
+        }
+
+
         // Function to render validation logs in a table
         function renderValidationLogs(logs) {
-            if (logs.length === 0) return '<p>No validation attempts found.</p>';
+            // Filter logs to show only successful validations
+            const successfulLogs = logs.filter(log => log.status === "success");
+
+            if (successfulLogs.length === 0) return '<p>No successful validation attempts.</p>';
 
             let table = `
                 <table class="validation-table">
                     <thead>
                         <tr>
                             <th>Timestamp</th>
-                            <th>Status</th>
+                            <th>User</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            logs.forEach(log => {
+            successfulLogs.forEach(log => {
                 table += `
                     <tr>
                         <td>${log.timestamp}</td>
-                        <td>${log.status}</td>
+                        <td>${log.username}</td>
                     </tr>
                 `;
             });
@@ -155,6 +287,9 @@
             `;
             return table;
         }
+
+        // Call checkLogin when the page loads
+        window.onload = checkLogin;
 
         // Create markers for all devices
         var markers = [];
@@ -172,7 +307,7 @@
                             Location: ${roundToFourDecimals({{ device.lat }})}, ${roundToFourDecimals({{ device.lng }})}<br>
                             Max. Validations per Cycle: {{ device.max_validations }}
                             <hr>
-                            <strong>Validation Attempts:</strong>
+                            <strong>Successful Validations:</strong>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 ${renderValidationLogs(logs)}
                             </div>
