@@ -148,13 +148,13 @@ def validate_totp(device_id, data_enc):
 
     if not device:
         log_validation(device_id, "failed", "Invalid Device ID")
-        return render_template('map.html', devices=devices, status="Invalid Device ID")
+        return render_template('map.html', devices=devices, status="Invalid Device ID", success="false")
 
     try:
         decrypted_data = decrypt_totp(device['secret'], data_enc)
     except:
         log_validation(device_id, "failed", "Decryption Error")
-        return render_template('map.html', devices=devices, status="Invalid Data Encryption")
+        return render_template('map.html', devices=devices, status="Invalid Data Encryption", success="false")
 
     try:
         totp_number, esp_lat, esp_lng = decrypted_data.split('|')
@@ -162,18 +162,21 @@ def validate_totp(device_id, data_enc):
         esp_lng = float(esp_lng)
     except (ValueError, IndexError):
         log_validation(device_id, "failed", "Invalid Data Format")
-        return render_template('map.html', devices=devices, status="Invalid Decrypted Data Format")
+        return render_template('map.html', devices=devices, status="Invalid Decrypted Data Format", success="false")
 
     totp = pyotp.TOTP(device['secret'])
     if totp.verify(totp_number):
         log_validation(device_id, "success", "Valid TOTP", esp_lat, esp_lng)
         status = "Valid Link"
+        success = "true"
     else:
         log_validation(device_id, "failed", "Invalid TOTP", esp_lat, esp_lng)
         status = "Invalid Link"
+        success = "false"
 
     return render_template('map.html',
                          status=status,
+                         success=success,
                          device_id=device_id,
                          esp_lat=esp_lat,
                          esp_lng=esp_lng,

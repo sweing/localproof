@@ -52,16 +52,30 @@
         }
         #status-message {
             position: absolute;
-            top: 10px;
+            top: 30%;
             left: 50%;
             transform: translateX(-50%);
+            z-index: 1000;
             background: white;
             padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            z-index: 1000;
-            font-size: 16px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+            animation: blinkBackground 3s infinite; /* Add blinking animation */
+        }
+        @keyframes blinkBackground {
+            0% {
+                background-color: white; /* Start with white */
+            }
+            50% {
+                background-color: #ffcccc; /* Midway color (light red) */
+            }
+            100% {
+                background-color: white; /* Return to white */
+            }
         }
         .emoji-marker {
             font-size: 24px;
@@ -94,8 +108,8 @@
             z-index: 1000;
             background: white;
             padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
             font-size: 10pt;
@@ -123,8 +137,8 @@
             z-index: 1000;
             background: white;
             padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
             font-size: 10pt;
@@ -136,11 +150,78 @@
             font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
             font-size: 10pt;
         }
+        a {
+            text-decoration: none; /* Remove underline */
+            color: #007BFF; /* Default link color (blue) */
+            transition: color 0.3s ease; /* Smooth color transition on hover */
+        }
+
+        a:hover {
+            color: #0056b3; /* Darker blue on hover */
+        }
+
+        /* Overlay Styles */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Dimmed background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+
+        .overlay-circle {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: {% if success == 'true' %}rgba(0, 97, 100, 1){% else %}rgba(219, 67, 37, 1){% endif %};
+            position: relative;
+        }
+
+        .overlay-circle svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .overlay-circle text {
+            font-size: 4rem;
+            font-weight: bold;
+            fill: white;
+        }
+
+        .overlay-status {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: white;
+            text-align: center;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+        }
     </style>
 </head>
 <body>
     {% if status %}
-    <div id="status-message">{{ status }}</div>
+    <div class="overlay" id="status-overlay">
+        <div class="overlay-circle">
+            <svg viewBox="0 0 100 100">
+                {% if success == 'true' %}
+                <!-- Checkmark -->
+                <text x="50" y="60" text-anchor="middle" dominant-baseline="middle">✓</text>
+                {% else %}
+                <!-- Big X -->
+                <text x="50" y="55" text-anchor="middle" dominant-baseline="middle">✗</text>
+                {% endif %}
+            </svg>
+        </div>
+        <div class="overlay-status">{{ status }}</div>
+    </div>
     {% endif %}
     <div id="map"></div>
     <div id="login-form">
@@ -151,7 +232,7 @@
     </div>
     <div id="user-info" style="display: none;">
         Logged in as: <span id="logged-in-username"></span>
-        <button onclick="logout()">Logout</button>
+        (<a href="#" onclick="logout()">logout</a>)
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -345,64 +426,74 @@
             markers.push(espMarker);
 
             // Add database device location marker
-            var deviceMarker = L.marker([{{ device_lat }}, {{ device_lng }}]).addTo(map)
-                .bindPopup(`
-                    <div class="popup-headline">Device Location (from DB)</div>
-                    <div class="popup-content">
-                        Device: {{ device_id }}<br>
-                        Location: ${roundToFourDecimals({{ device_lat }})}, ${roundToFourDecimals({{ device_lng }})}<br>
-                        Max. Validations per Cycle: {{ devices[0].max_validations }}
-                    </div>
-                `);
-            markers.push(deviceMarker);
+            var deviceMarker = L.marker([{{ device_lat }}, {{ device_lng }}]);//.addTo(map)
+                // .bindPopup(`
+                //     <div class="popup-headline">Device Location (from DB)</div>
+                //     <div class="popup-content">
+                //         Device: {{ device_id }}<br>
+                //         Location: ${roundToFourDecimals({{ device_lat }})}, ${roundToFourDecimals({{ device_lng }})}<br>
+                //         Max. Validations per Cycle: {{ devices[0].max_validations }}
+                //     </div>
+                // `);
+            //markers.push(deviceMarker);
 
             // Fit bounds to ESP32 and database device locations
             var initialGroup = L.featureGroup([espMarker, deviceMarker]);
             map.fitBounds(initialGroup.getBounds());
 
             // Ask for browser location permission (user position)
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var userLat = position.coords.latitude;
-                    var userLng = position.coords.longitude;
+            // if (navigator.geolocation) {
+            //     navigator.geolocation.getCurrentPosition(function(position) {
+            //         var userLat = position.coords.latitude;
+            //         var userLng = position.coords.longitude;
 
-                    // Add user location marker
-                    var userMarker = L.marker([userLat, userLng], {
-                        icon: L.divIcon({
-                            className: 'emoji-marker',
-                            html: '📱',
-                            iconSize: [32, 32]
-                        })
-                    }).addTo(map)
-                        .bindPopup(`
-                            <div class="popup-headline">Your Location (from Browser)</div>
-                            <div class="popup-content">
-                                Location: ${roundToFourDecimals(userLat)}, ${roundToFourDecimals(userLng)}
-                            </div>
-                        `);
-                    markers.push(userMarker);
+            //         // Add user location marker
+            //         var userMarker = L.marker([userLat, userLng], {
+            //             icon: L.divIcon({
+            //                 className: 'emoji-marker',
+            //                 html: '📱',
+            //                 iconSize: [32, 32]
+            //             })
+            //         }).addTo(map)
+            //             .bindPopup(`
+            //                 <div class="popup-headline">Your Location (from Browser)</div>
+            //                 <div class="popup-content">
+            //                     Location: ${roundToFourDecimals(userLat)}, ${roundToFourDecimals(userLng)}
+            //                 </div>
+            //             `);
+            //         markers.push(userMarker);
 
-                    // Fit bounds to all 3 locations (ESP32, database device, and browser)
-                    var finalGroup = L.featureGroup([espMarker, deviceMarker, userMarker]);
-                    map.fitBounds(finalGroup.getBounds());
-                }, function(error) {
-                    console.error("Error getting location: ", error);
-                });
-            } else {
-                console.error("Geolocation is not supported by this browser.");
-            }
+            //         // Fit bounds to all 3 locations (ESP32, database device, and browser)
+            //         var finalGroup = L.featureGroup([espMarker, deviceMarker, userMarker]);
+            //         map.fitBounds(finalGroup.getBounds());
+            //     }, function(error) {
+            //         console.error("Error getting location: ", error);
+            //     });
+            // } else {
+            //     console.error("Geolocation is not supported by this browser.");
+            // }
         {% else %}
             // Fit bounds to all device locations if no validation is performed
             var allDevicesGroup = L.featureGroup(markers);
             map.fitBounds(allDevicesGroup.getBounds());
         {% endif %}
 
-        // Hide the status message after 10 seconds (if it exists)
-        var statusMessage = document.getElementById('status-message');
-        if (statusMessage) {
-            setTimeout(function() {
-                statusMessage.style.display = 'none';
-            }, 10000);
+        // Hide the overlay after 5 seconds or on user interaction (click or keypress)
+        var overlay = document.getElementById('status-overlay');
+        if (overlay) {
+            // Function to hide the overlay
+            function hideOverlay() {
+                overlay.style.display = 'none';
+            }
+
+            // Hide after 5 seconds
+            setTimeout(hideOverlay, 10000);
+
+            // Hide on click (anywhere on the overlay)
+            overlay.addEventListener('click', hideOverlay);
+
+            // Hide on keypress (any key)
+            document.addEventListener('keydown', hideOverlay);
         }
     </script>
 </body>
