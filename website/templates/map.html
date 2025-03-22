@@ -473,9 +473,17 @@
             //     console.error("Geolocation is not supported by this browser.");
             // }
         {% else %}
-            // Fit bounds to all device locations if no validation is performed
-            var allDevicesGroup = L.featureGroup(markers);
-            map.fitBounds(allDevicesGroup.getBounds());
+            // Check if there are markers
+            if (markers.length > 0) {
+                // Create a feature group for all markers
+                var allDevicesGroup = L.featureGroup(markers);
+                // If markers exist, fit the map bounds to the markers
+                map.fitBounds(allDevicesGroup.getBounds());
+                // map.zoomOut(1); // Zoom out one step
+            } else {
+                // If no markers exist, center the map on the world view
+                map.setView([0, 0], 3); // Center at [0, 0] with zoom level 2
+            }
         {% endif %}
 
         // Hide the overlay after 5 seconds or on user interaction (click or keypress)

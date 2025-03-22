@@ -67,9 +67,10 @@ localproof/
    pip install -r requirements.txt
    ```
 
-3. Run the Flask app:
+3. Create database and run the Flask app:
    ```bash
    cd website
+   python create_database.py
    python app.py
    ```
 
@@ -85,13 +86,7 @@ The ESP32 code and simulators are located in the `esp32/` directory. Refer to th
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/YourFeature`).
-3. Commit your changes (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature/YourFeature`).
-5. Open a pull request.
+Contributions are welcome!
 
 ---
 
@@ -100,9 +95,3 @@ Contributions are welcome! Please follow these steps:
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
-
-## Acknowledgments
-
-- **Leaflet.js** for the interactive map.
-- **Flask** for the backend framework.
-- **PyOTP** for TOTP generation and validation.

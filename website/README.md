@@ -19,9 +19,10 @@ This directory contains the Flask backend and frontend for the LOCALPROOF web ap
    pip install -r requirements.txt
    ```
 
-2. Run the Flask app:
+2. Create database and run the Flask app:
    ```bash
    cd website
+   python create_database.py
    python app.py
    ```
 
