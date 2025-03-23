@@ -10,6 +10,7 @@ import bcrypt
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a secure key
+validation_counts = {}  # Track validation count per TOTP
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -164,7 +165,26 @@ def validate_totp(device_id, data_enc):
         log_validation(device_id, "failed", "Invalid Data Format")
         return render_template('map.html', devices=devices, status="Invalid Decrypted Data Format", success="false")
 
+    # Get the current TOTP cycle start time
     totp = pyotp.TOTP(device['secret'])
+    current_time = datetime.datetime.now()
+    time_step = totp.interval
+    cycle_start = current_time.timestamp() - (current_time.timestamp() % time_step)
+    cycle_start_str = datetime.datetime.utcfromtimestamp(cycle_start).strftime('%Y-%m-%d %H:%M:%S')
+
+    # Check the number of validations in the current cycle
+    conn = get_db_connection()
+    validations_in_cycle = conn.execute(
+        'SELECT COUNT(*) FROM validation_logs WHERE device_id = ? AND timestamp >= ? AND status == "success"',
+        (device_id, cycle_start_str)
+    ).fetchone()[0]
+    conn.close()
+    # Check if the device has exceeded max_validations
+    if validations_in_cycle >= device['max_validations']:
+        log_validation(device_id, "failed", "Max Validations Exceeded", esp_lat, esp_lng)
+        return render_template('map.html', devices=devices, status="Max Validations Exceeded", success="false")
+
+
     if totp.verify(totp_number):
         log_validation(device_id, "success", "Valid TOTP", esp_lat, esp_lng)
         status = "Valid Link"

@@ -31,7 +31,9 @@ localproof/
 │   ├── static/                # Folder to store generated QRs
 │   └── README.md              # ESP32-specific documentation
 ├── website/                   # Flask website code
-│   ├── app/                   # Flask application
+│   ├── app.py                 # Flask application
+│   ├── create_database.py     # Python script to generate database (run once)
+│   ├── landing_page.html      # Landing page of LOCALPROOF
 │   ├── static/                # Static files (CSS, JS, images)
 │   ├── templates/             # HTML templates
 │   └── README.md              # Website-specific documentation
