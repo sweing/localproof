@@ -150,6 +150,34 @@
             font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
             font-size: 10pt;
         }
+        .popup-form {
+            padding: 10px;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+        }
+        .popup-form input {
+            display: block;
+            margin-bottom: 5px;
+            padding: 5px;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 14px;
+            width: 150px;
+        }
+        .popup-form input[readonly] {
+            display: block;
+            margin-bottom: 5px;
+            padding: 5px;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 14px;
+            width: 150px;
+            cursor: not-allowed;
+        }
+        .popup-form button {
+            padding: 3px 7px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
         a {
             text-decoration: none; /* Remove underline */
             color: #007BFF; /* Default link color (blue) */
@@ -254,6 +282,16 @@
             return Math.round(num * 10000) / 10000;
         }
 
+        // Function to generate a random string
+        function generateRandomString(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
         // Function to fetch validation logs for a device
         async function fetchValidationLogs(device_id) {
             try {
@@ -265,7 +303,7 @@
                 return [];
             }
         }
-
+        
         // Function to handle login
         async function login() {
             const username = document.getElementById('username').value;
@@ -315,6 +353,7 @@
             const response = await fetch('/logout');
             const data = await response.json();
             if (data.success) {
+                //location.reload();  // Reload the page to reflect the changes
                 document.getElementById('login-form').style.display = 'block';
                 document.getElementById('user-info').style.display = 'none';
             }
@@ -384,7 +423,8 @@
                     const popupContent = `
                         <div class="popup-headline">Device Location</div>
                         <div class="popup-content">
-                            Device: ${device.device_id}<br>
+                            Device: ${device.device_id}
+                            <br>
                             Location: ${roundToFourDecimals({{ device.lat }})}, ${roundToFourDecimals({{ device.lng }})}<br>
                             Max. Validations per Cycle: {{ device.max_validations }}
                             <hr>
@@ -403,9 +443,10 @@
                 device_id: '{{ device.device_id }}',
                 lat: {{ device.lat }},
                 lng: {{ device.lng }},
-                max_validations: {{ device.max_validations }}
+                max_validations: {{ device.max_validations }},
+                username: '{{ device.username }}'  // Pass the username to the frontend
             });
-        {% endfor %}
+        {% endfor %}   
 
         // Check if validation data is available
         {% if esp_lat and esp_lng %}
@@ -502,6 +543,98 @@
 
             // Hide on keypress (any key)
             document.addEventListener('keydown', hideOverlay);
+        }
+
+
+        // Handle right-click/long-tap event
+        // Handle right-click/long-tap event
+        map.on('contextmenu', function (e) {
+            // Check if the user is logged in
+            fetch('/check-login')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.logged_in) {
+                        alert('You must be logged in to add a device.');
+                        return;
+                    }
+
+                    // Generate random device_id and secret
+                    const device_id = generateRandomString(4);
+                    const secret = generateRandomString(16);
+
+                    // Create a popup with a form
+                    const popup = L.popup()
+                        .setLatLng(e.latlng)
+                        .setContent(`
+                            <div class="popup-form">
+                                Device ID: 
+                                <input type="text" value="${device_id}" readonly>
+                                Secret: <input type="text" value="${secret}" readonly>
+                                Max Validations: 
+                                <input type="number" id="max_validations" min="1" value="1" required>
+                                <button onclick="registerDevice(${e.latlng.lat}, ${e.latlng.lng}, '${device_id}', '${secret}', this)">Register Device</button>
+                            </div>
+                        `)
+                        .openOn(map);
+                });
+        });
+        // Function to register the device
+        function registerDevice(lat, lng, device_id, secret, button) {
+            let max_validations = document.getElementById('max_validations').value;
+
+            // Validate max_validations
+            max_validations = parseInt(max_validations, 10);
+            if (isNaN(max_validations) || max_validations < 1) {
+                max_validations = 1; // Default to 1 if invalid
+            }
+
+            // Disable the button to prevent multiple clicks
+            button.disabled = true;
+            button.textContent = 'Registering...';
+
+            // Send data to the backend
+            fetch('/add-device', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    device_id: device_id,
+                    secret: secret,
+                    lat: lat,
+                    lng: lng,
+                    max_validations: max_validations
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Device registered successfully!');
+                    // Add a marker for the new device
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup(`Device ID: ${device_id}<br>Secret: ${secret}`);
+                    // Close the popup
+                    map.closePopup();
+                } else {
+                    if (data.message === 'Device ID already exists. Please try again.') {
+                        // Regenerate device_id and update the form
+                        const new_device_id = generateRandomString(4);
+                        document.querySelector('.popup-form input[type="text"]').value = new_device_id;
+                        alert('Device ID already exists. A new one has been generated.');
+                    } else {
+                        alert('Failed to register device: ' + data.message);
+                    }
+                    // Re-enable the button
+                    button.disabled = false;
+                    button.textContent = 'Register Device';
+                }
+            })
+            .catch(error => {
+                alert('An error occurred: ' + error.message);
+                // Re-enable the button
+                button.disabled = false;
+                button.textContent = 'Register Device';
+            });
         }
     </script>
 </body>

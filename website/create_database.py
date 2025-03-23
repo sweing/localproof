@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS devices (
     secret TEXT NOT NULL,
     lat REAL,
     lng REAL,
-    max_validations INTEGER
+    max_validations INTEGER,
+    username TEXT
 )
 ''')
 

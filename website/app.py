@@ -134,10 +134,11 @@ def get_validation_logs(device_id):
 
 @app.route('/', methods=['GET'])
 def show_map():
+    username = current_user.username if current_user.is_authenticated else "unknown"
     conn = get_db_connection()
     devices = conn.execute('SELECT * FROM devices').fetchall()
     conn.close()
-    return render_template('map.html', devices=devices)
+    return render_template('map.html', devices=devices, username=username)
 
 @app.route('/<device_id>/<data_enc>', methods=['GET'])
 def validate_totp(device_id, data_enc):
@@ -206,6 +207,96 @@ def validate_totp(device_id, data_enc):
                          device_lat=device['lat'],
                          device_lng=device['lng'],
                          devices=devices)
+
+@app.route('/add-device', methods=['POST'])
+@login_required  # Ensure the user is logged in
+def add_device_route():
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'You must be logged in to add a device.'})
+
+    data = request.get_json()
+    device_id = data.get('device_id')
+    secret = data.get('secret')
+    lat = data.get('lat')
+    lng = data.get('lng')
+    max_validations = data.get('max_validations')
+
+    if not device_id or not secret:
+        return jsonify({'success': False, 'message': 'Device ID and secret are required.'})
+
+    # Validate max_validations
+    try:
+        max_validations = int(max_validations)
+        if max_validations < 1:
+            max_validations = 1  # Default to 1 if invalid
+    except (TypeError, ValueError):
+        max_validations = 1  # Default to 1 if missing or invalid
+
+    # Check if the device_id already exists
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT device_id FROM devices WHERE device_id = ?', (device_id,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'success': False, 'message': 'Device ID already exists. Please try again.'})
+
+    try:
+        add_device(device_id, secret, lat, lng, max_validations, current_user.username)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+def add_device(device_id, secret, lat=None, lng=None, max_validations=1, username=None):
+    """
+    Adds a device to the database.
+    
+    :param device_id: Unique ID of the device.
+    :param secret: TOTP secret for the device.
+    :param lat: Latitude of the device's location (optional).
+    :param lng: Longitude of the device's location (optional).
+    :param max_validations: Max validations per window.
+    :param username: Username of the user who added the device.
+    """
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO devices (device_id, secret, lat, lng, max_validations, username)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (device_id, secret, lat, lng, max_validations, username))
+    conn.commit()
+    conn.close()
+    print(f"Device '{device_id}' added successfully by user '{username}'.")
+
+@app.route('/delete-device/<device_id>', methods=['DELETE'])
+@login_required
+def delete_device(device_id):
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'You must be logged in to delete a device.'})
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    # Check if the device exists and is owned by the current user
+    cursor.execute('SELECT username FROM devices WHERE device_id = ?', (device_id,))
+    device = cursor.fetchone()
+    if not device:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Device not found.'})
+    if device[0] != current_user.username:
+        conn.close()
+        return jsonify({'success': False, 'message': 'You are not the owner of this device.'})
+
+    # Delete the device
+    try:
+        cursor.execute('DELETE FROM devices WHERE device_id = ?', (device_id,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5005, debug=True)
