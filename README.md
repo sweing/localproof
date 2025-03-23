@@ -37,7 +37,7 @@ localproof/
 │   ├── static/                # Static files (CSS, JS, images)
 │   ├── templates/             # HTML templates
 │   └── README.md              # Website-specific documentation
-├── pictures                   # Photos for BLOGPOST.md
+├── pictures/                  # Photos for BLOGPOST.md
 ├── README.md                  # Main project README
 ├── BLOGPOST.md                # Blog post
 ├── requirements.txt           # Python dependencies
