@@ -4,7 +4,13 @@
     <title>LOCALPROOF: MAP</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="./static/style.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .overlay-circle {
+            background: {% if success == 'true' %}rgba(0, 97, 100, 1){% else %}rgba(219, 67, 37, 1){% endif %};
+        }
+
+    </style>
 </head>
 <body>
     {% if status %}
