@@ -4,6 +4,10 @@
 
 LOCALPROOF is a system that uses ESP32 microcontrollers to generate cryptographic proof of presence and location. It combines hardware (ESP32), backend (Flask), and frontend (Leaflet.js) to create a seamless experience for tracking and validating device locations.
 
+The website is hosted at [localproof.org](https://localproof.org/).
+
+<img src="pictures/device.jpeg?raw=true" height="400"/> <img src="pictures/screen.jpeg?raw=true" height="400"/> <img src="pictures/verification.jpeg?raw=true" height="400"/> <img src="pictures/popup.jpeg?raw=true" height="400"/> 
+
 ---
 
 ## Features
