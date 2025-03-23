@@ -45,7 +45,7 @@ localproof/
 ├── README.md                  # Main project README
 ├── BLOGPOST.md                # Blog post
 ├── requirements.txt           # Python dependencies
-└── LICENSE                    # Project license (e.g., MIT)
+└── LICENSE                    # Project license
 ```
 
 ---
