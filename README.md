@@ -6,7 +6,7 @@ LOCALPROOF is a system that uses ESP32 microcontrollers to generate cryptographi
 
 The website is hosted at [localproof.org](https://localproof.org/).
 
-<img src="pictures/device.jpeg?raw=true" height="400"/> <img src="pictures/screen.jpeg?raw=true" height="400"/> <img src="pictures/verification.jpeg?raw=true" height="400"/> <img src="pictures/popup.jpeg?raw=true" height="400"/> 
+<img src="pictures/device.jpeg?raw=true" height="300"/> <img src="pictures/screen.jpeg?raw=true" height="300"/> <img src="pictures/verification.jpeg?raw=true" height="300"/> <img src="pictures/popup.jpeg?raw=true" height="300"/> 
 
 ---
 
