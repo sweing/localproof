@@ -6,6 +6,18 @@ import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
+# base_url = "https://map.localproof.org"
+base_url = "http://localhost:5005"
+
+device_id = "0001"
+# secret = "secret" # Comment line to query database 
+device_lng = 48.188920
+device_lat = 16.376279
+
+# device_id = "0002"
+# device_lng = 48.200301
+# device_lat = 16.335815
+
 # Database connection helper function
 def get_db_connection():
     conn = sqlite3.connect('../website/database.db')
@@ -47,23 +59,27 @@ def encrypt_totp(key, totp_number, lat, lng):
     # Return the IV and ciphertext as a URL-safe base64-encoded string
     return base64.urlsafe_b64encode(iv_and_ciphertext).decode('utf-8')
 
-def generate_totp_qr(device_id: str, lat: float, lng: float):
+def generate_totp_qr(device_id: str, lat: float, lng: float, secret: str = None):
     """
     Generates a QR code with an encrypted TOTP code for a specific device.
     
     :param device_id: Unique ID of the device.
     :param lat: Latitude of the device's location.
     :param lng: Longitude of the device's location.
+    :param secret: Optional secret key. If provided, the database will not be queried.
     """
-    # Fetch the device's secret from the database
-    conn = get_db_connection()
-    device = conn.execute('SELECT * FROM devices WHERE device_id = ?', (device_id,)).fetchone()
-    conn.close()
+    if secret is None:
+        # Fetch the device's secret from the database
+        conn = get_db_connection()
+        device = conn.execute('SELECT * FROM devices WHERE device_id = ?', (device_id,)).fetchone()
+        conn.close()
 
-    if not device:
-        raise ValueError(f"Device not found: {device_id}")
+        if not device:
+            raise ValueError(f"Device not found: {device_id}")
 
-    secret = device['secret']
+        secret = device['secret']
+    else:
+        print(f"Using provided secret for device {device_id}")
 
     # Generate the TOTP code
     totp = pyotp.TOTP(secret)
@@ -74,7 +90,7 @@ def generate_totp_qr(device_id: str, lat: float, lng: float):
     encrypted_data = encrypt_totp(secret, current_totp, lat, lng)
 
     # Create a validation URL with encrypted data and device ID
-    validation_url = f"https://map.localproof.org/{device_id}/{encrypted_data}"
+    validation_url = f"{base_url}/{device_id}/{encrypted_data}"
 
     # Print URL for testing
     print(f"Validation URL: {validation_url}")
@@ -97,5 +113,8 @@ def generate_totp_qr(device_id: str, lat: float, lng: float):
 
 if __name__ == "__main__":
     # Example: Generate QR codes for devices with specific lat and lng
-    generate_totp_qr("0001", 48.188920388796255, 16.376279146278513)  # Device 0001
-    #generate_totp_qr("0002", 48.20030117479758, 16.335814785632046)  # Device 0002
+    # Option 1: Use the database to fetch the secret
+    generate_totp_qr(device_id, device_lng, device_lat)  # Device 0001
+
+    # Option 2: Provide the secret directly
+    # generate_totp_qr(device_id, device_lng, device_lat, secret)  # Device 0001 with provided secret

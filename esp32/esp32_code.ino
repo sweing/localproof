@@ -18,7 +18,7 @@
 // SETUP
 //String baseUrl = "http://localhost:5005"; // Dynamic base URL
 String baseUrl = "https://map.localproof.org/";
-const char *accountId = "0001";  // The account ID to be used in the QR code
+const char *deviceId = "0001";  // The account ID to be used in the QR code
 const unsigned char key[32] = "yoursecret";
 
 Preferences preferences;
@@ -267,7 +267,7 @@ void loop() {
     }
   
     // 8. Build URL
-    String url = baseUrl + String(accountId) + "/" + String((char *)base64_output);
+    String url = baseUrl + String(deviceId) + "/" + String((char *)base64_output);
     // ---------------------------------------------------------------------------
 
     

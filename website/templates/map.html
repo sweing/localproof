@@ -154,13 +154,13 @@
             padding: 10px;
             font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
         }
-        .popup-form input {
-            display: block;
+        .popup-content input {
+            //display: block;
             margin-bottom: 5px;
-            padding: 5px;
+            //padding: 5px;
             font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
             font-size: 14px;
-            width: 150px;
+            width: 100px;
         }
         .popup-form input[readonly] {
             display: block;
@@ -566,13 +566,14 @@
                     const popup = L.popup()
                         .setLatLng(e.latlng)
                         .setContent(`
-                            <div class="popup-form">
+                        <div class="popup-headline">Register Device</div>
+                            <div class="popup-content">
                                 Device ID: 
                                 <input type="text" value="${device_id}" readonly>
-                                Secret: <input type="text" value="${secret}" readonly>
-                                Max Validations: 
+                                <br>Secret: <input type="text" value="${secret}" readonly>
+                                <br>Max. Validations: 
                                 <input type="number" id="max_validations" min="1" value="1" required>
-                                <button onclick="registerDevice(${e.latlng.lat}, ${e.latlng.lng}, '${device_id}', '${secret}', this)">Register Device</button>
+                                <br><button onclick="registerDevice(${e.latlng.lat}, ${e.latlng.lng}, '${device_id}', '${secret}', this)">Register Device</button>
                             </div>
                         `)
                         .openOn(map);
