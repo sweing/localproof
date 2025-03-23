@@ -136,7 +136,19 @@ def get_validation_logs(device_id):
 def show_map():
     username = current_user.username if current_user.is_authenticated else "unknown"
     conn = get_db_connection()
-    devices = conn.execute('SELECT * FROM devices').fetchall()
+
+    # Fetch devices that have at least one successful validation
+    devices = conn.execute('''
+        SELECT d.*
+        FROM devices d
+        WHERE EXISTS (
+            SELECT 1
+            FROM validation_logs v
+            WHERE v.device_id = d.device_id
+              AND v.status = 'success'
+        )
+    ''').fetchall()
+
     conn.close()
     return render_template('map.html', devices=devices, username=username)
 
