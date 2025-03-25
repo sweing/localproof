@@ -97,12 +97,19 @@
             });
             const data = await response.json();
             if (data.success) {
+                loadInactiveDevices();
+                registeredDeviceMarkers = [];
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('user-info').style.display = 'block';
                 document.getElementById('logged-in-username').textContent = data.username;
             } else {
                 alert(data.error || 'Login failed');
             }
+        }
+        // Call this after successful login
+        function onLoginSuccess() {
+            loadInactiveDevices();
+            // ... your existing login success code
         }
 
         // Function to handle registration
@@ -125,23 +132,63 @@
                 alert(data.error || 'Registration failed');
             }
         }
-
+        registeredDeviceMarkers = [];
         // Function to handle logout
         async function logout() {
             const response = await fetch('/logout');
             const data = await response.json();
             if (data.success) {
+                registeredDeviceMarkers.forEach(marker => map.removeLayer(marker));
+                
+                inactiveDeviceMarkers.forEach(marker => map.removeLayer(marker));
+                inactiveDeviceMarkers = [];
                 //location.reload();  // Reload the page to reflect the changes
                 document.getElementById('login-form').style.display = 'block';
                 document.getElementById('user-info').style.display = 'none';
             }
         }
 
+        // Global variable to store inactive device markers
+        let inactiveDeviceMarkers = [];
+
+        // Function to fetch and display inactive devices
+        async function loadInactiveDevices() {
+            try {
+                const response = await fetch('/api/my-inactive-devices');
+                const devices = await response.json();
+                
+                // Clear existing inactive markers
+                inactiveDeviceMarkers.forEach(marker => map.removeLayer(marker));
+                inactiveDeviceMarkers = [];
+                
+                // Add new inactive devices with reduced opacity
+                devices.forEach(device => {
+                    if (device.lat && device.lng) {
+                        //const marker = L.marker([device.lat, device.lng]).addTo(map);
+                        const marker = L.marker([device.lat, device.lng], {
+                            opacity: 0.5,
+                            // icon: L.divIcon({
+                            //     className: 'inactive-device-icon'
+                            // //     html: `<div>${device.device_id}</div>`
+                            // })
+                        }).addTo(map);
+                        marker.bindPopup(`<div class="popup-content">Device ID: ${device.device_id}<br>Secret: ${device.secret}<br><hr><strong>Validate once to add it to the map.</strong></div>`)
+                        //marker.bindPopup(`Inactive Device: ${device.device_id}`);
+                        inactiveDeviceMarkers.push(marker);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading inactive devices:', error);
+            }
+        }
+
+
         // Check login status on page load
         async function checkLogin() {
             const response = await fetch('/check-login');
             const data = await response.json();
             if (data.logged_in) {
+                loadInactiveDevices()
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('user-info').style.display = 'block';
                 document.getElementById('logged-in-username').textContent = data.username;
@@ -389,13 +436,15 @@
             .then(data => {
                 if (data.success) {
                     //alert('Device registered successfully!\nValidate once to add it to the map.');
+                    
                     // Add a marker for the new device
                     map.closePopup();
-                    L.marker([lat, lng], { opacity: 0.5 })  // Set opacity to 0.5
+                    marker = L.marker([lat, lng], { opacity: 0.5 })  // Set opacity to 0.5
                         .addTo(map)
                         .bindPopup(`<div class="popup-content">Device ID: ${device_id}<br>Secret: ${secret}<br><hr><strong>Validate once to add it to the map.</strong></div>`)
                         .openPopup();
                     // Close the popup
+                    registeredDeviceMarkers.push(marker)
                     
                 } else {
                     if (data.message === 'Device ID already exists. Please try again.') {

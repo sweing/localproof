@@ -100,6 +100,20 @@ def logout():
     logout_user()
     return jsonify({'success': True})
 
+@app.route('/api/my-inactive-devices')
+@login_required
+def get_my_inactive_devices():
+    conn = get_db_connection()
+    devices = conn.execute(
+        'SELECT * FROM devices WHERE active = FALSE AND username = ?',
+        (current_user.username,)
+    ).fetchall()
+    conn.close()
+    
+    # Convert Row objects to dictionaries
+    devices_list = [dict(device) for device in devices]
+    return jsonify(devices_list)
+
 # Update validation logs to include username
 def log_validation(device_id, status, reason, lat=None, lng=None):
     username = current_user.username if current_user.is_authenticated else "unknown"
@@ -139,14 +153,9 @@ def show_map():
 
     # Fetch devices that have at least one successful validation
     devices = conn.execute('''
-        SELECT d.*
-        FROM devices d
-        WHERE EXISTS (
-            SELECT 1
-            FROM validation_logs v
-            WHERE v.device_id = d.device_id
-              AND v.status = 'success'
-        )
+    SELECT *
+    FROM devices
+    WHERE active = TRUE
     ''').fetchall()
 
     conn.close()
@@ -155,7 +164,12 @@ def show_map():
 @app.route('/<device_id>/<data_enc>', methods=['GET'])
 def validate_totp(device_id, data_enc):
     conn = get_db_connection()
-    devices = conn.execute('SELECT * FROM devices').fetchall()
+    devices = conn.execute('''
+        SELECT * 
+        FROM devices 
+        WHERE active = TRUE 
+        OR device_id = ?
+    ''', (device_id,)).fetchall()
     device = conn.execute('SELECT * FROM devices WHERE device_id = ?', (device_id,)).fetchone()
     conn.close()
 
@@ -192,7 +206,6 @@ def validate_totp(device_id, data_enc):
             'SELECT COUNT(*) FROM validation_logs WHERE device_id = ? AND timestamp >= ? AND status = "success"',
             (device_id, cycle_start_str)
         ).fetchone()[0]
-        conn.close()
 
         # Check if the device has exceeded max_validations
         if validations_in_cycle >= device['max_validations']:
@@ -202,8 +215,17 @@ def validate_totp(device_id, data_enc):
         else:
             # If max_validations is not exceeded, log the successful validation
             log_validation(device_id, "success", "Valid TOTP", esp_lat, esp_lng)
+            
+            # Update the device to active in the devices table
+            conn.execute(
+                'UPDATE devices SET active = TRUE WHERE device_id = ?',
+                (device_id,)
+            )
+            conn.commit()
+            
             status = "Valid Link"
             success = "true"
+        conn.close()
     else:
         # If TOTP verification fails, log the failed validation
         log_validation(device_id, "failed", "Invalid TOTP", esp_lat, esp_lng)

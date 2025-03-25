@@ -4,7 +4,6 @@ import sqlite3
 conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
 
-# Create a table for device secrets and locations
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS devices (
     device_id TEXT PRIMARY KEY,
@@ -12,7 +11,9 @@ CREATE TABLE IF NOT EXISTS devices (
     lat REAL,
     lng REAL,
     max_validations INTEGER,
-    username TEXT
+    username TEXT,
+    active BOOLEAN DEFAULT FALSE,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 ''')
 
