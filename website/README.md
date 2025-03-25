@@ -1,6 +1,6 @@
-# LOCALPROOF Website
+# localproof Website
 
-This directory contains the Flask backend and frontend for the LOCALPROOF web app.
+This directory contains the Flask backend and frontend for the web app.
 
 ---
 

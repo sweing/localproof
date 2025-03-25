@@ -1,6 +1,6 @@
 # ESP32 Code and Simulators
 
-This directory contains the code for ESP32 devices and Python-based simulators to test the LOCALPROOF system.
+This directory contains the code for ESP32 devices and Python-based simulators to test the system.
 
 ---
 

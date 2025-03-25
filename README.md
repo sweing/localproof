@@ -1,8 +1,8 @@
-# LOCALPROOF
+# localproof
 
 **Proof of Presence and Location Using ESP32 Devices**
 
-LOCALPROOF is a system that uses ESP32 microcontrollers to generate cryptographic proof of presence and location. It combines hardware (ESP32), backend (Flask), and frontend (Leaflet.js) to create a seamless experience for tracking and validating device locations.
+This project uses ESP32 microcontrollers to generate cryptographic proof of presence and location. It combines hardware (ESP32), backend (Flask), and frontend (Leaflet.js) to create a seamless experience for tracking and validating device locations.
 
 The website is hosted at [localproof.org](https://localproof.org/).
 
@@ -22,7 +22,7 @@ The website is hosted at [localproof.org](https://localproof.org/).
 ## Repository Structure
 
 - **`esp32/`**: Code for ESP32 devices and Python-based simulators.
-- **`website/`**: Flask backend and frontend for the LOCALPROOF web app.
+- **`website/`**: Flask backend and frontend for the web app.
 - **`README.md`**: This file.
 - **`LICENSE`**: Project license.
 
@@ -37,7 +37,7 @@ localproof/
 ├── website/                   # Flask website code
 │   ├── app.py                 # Flask application
 │   ├── create_database.py     # Python script to generate database (run once)
-│   ├── landing_page.html      # Landing page of LOCALPROOF
+│   ├── landing_page.html      # Landing page
 │   ├── static/                # Static files (CSS, JS, images)
 │   ├── templates/             # HTML templates
 │   └── README.md              # Website-specific documentation
