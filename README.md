@@ -2,7 +2,7 @@
 
 **Proof of Presence and Location Using ESP32 Devices**
 
-This project uses ESP32 microcontrollers to generate cryptographic proof of presence and location, creating a new unique QR code every 30 seconds. It combines hardware (ESP32), backend (Flask), and frontend (Leaflet.js) to create a seamless experience for tracking and validating device locations.
+This project uses ESP32 microcontrollers to generate cryptographic proof of presence and location, creating a new unique QR code every 30 seconds. Time synchronization is handled through the GPS module, enabling completely offline operation. It combines hardware (ESP32), backend (Flask), and frontend (Leaflet.js) to create a seamless experience for tracking and validating device locations.
 
 The website is hosted at [localproof.org](https://localproof.org/).
 
