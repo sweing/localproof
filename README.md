@@ -4,9 +4,11 @@
 
 This project implements an proof-of-presence system using ESP32 microcontrollers. Each device generates a cryptographically signed QR code that rotates every 30 seconds.
 
-Time synchronization is provided by GPS, enabling operation without internet connectivity. A simple stack—ESP32 hardware, a Flask backend, and a Leaflet.js frontend—is used to generate, verify, and visualize presence data.
+Time synchronization is provided by GPS, enabling operation without internet connectivity. A simple stack (ESP32 hardware, a Flask backend, and a Leaflet.js frontend) is used to generate, verify, and visualize presence data.
 
 The website is hosted at [localproof.org](https://localproof.org/).
+
+[Hardware specifics](https://github.com/sweing/localproof/blob/main/HARDWARE.md)
 
 <img src="pictures/device.jpeg?raw=true" height="300"/> <img src="pictures/screen.jpeg?raw=true" height="300"/> <img src="pictures/verification.jpeg?raw=true" height="300"/> <img src="pictures/popup.jpeg?raw=true" height="300"/> 
 
